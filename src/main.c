@@ -23,7 +23,7 @@ void *
 connection_handler(void *socket_desc) {
 
     /* Get the socket descriptor */
-    int sock = * (u_int64_t *)socket_desc;
+    int sock = * (int64_t *)socket_desc;
     ssize_t read_size;
     char *message , client_message[2000];
 
@@ -71,7 +71,7 @@ connection_handler(void *socket_desc) {
 
     // Remove socket when disconnected
     pthread_mutex_lock(&sockets_mutex);
-    list_remove(&sockets_root, socket_desc);
+    list_remove(&sockets_root, (void *)sock);
     list_display(&sockets_root);
     pthread_mutex_unlock(&sockets_mutex);
 
@@ -116,6 +116,6 @@ main(int argc, char *argv[]) {
         pthread_mutex_unlock(&sockets_mutex);
 
         fprintf(stderr, "Connection accepted\n");
-        pthread_create(&thread_id, NULL, connection_handler , (void *) &connfd);
+        pthread_create(&thread_id, NULL, connection_handler , (void *)&connfd);
     }
 }
