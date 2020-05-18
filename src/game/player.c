@@ -31,7 +31,7 @@ void players_list_display(list_t *root) {
     }
 }
 
-int players_check_existence(list_t *root, char *nick) {
+int64_t players_check_existence(list_t *root, char *nick) {
     list_t *temp = root;
     while (temp->next != NULL) {
         player_t *content = temp->next->content;
@@ -39,10 +39,10 @@ int players_check_existence(list_t *root, char *nick) {
             if (content->connected == 0) {      // then reconnect
                 content->connected = 1;
                 printf("Player %s reconnected.", nick);
-                return 1;
+                return (int64_t)content;
             } else {
                 printf("Player %s already connected!.", nick);
-                return 2;   // 2 means error: player exists
+                return -1;   // 2 means error: player exists
             }
         }
         temp = temp->next;  // next element

@@ -32,8 +32,9 @@ void players_list_display(list_t *root);
  * Check if the player exist and if is connected
  * @param root - root of the players' list
  * @param nick - nick of the player trying to connect
- * @return 0 - player didn't exist so can be created, 1 - reconnection, 2 - player exist is connected so abort connection
+ * @return 0 - player didn't exist so can be created,-1 - player exist is connected so abort connection
+ *      else - positive number which is the pointer to the player
  */
-int players_check_existence(list_t *root, char *nick);
+int64_t players_check_existence(list_t *root, char *nick);
 
 #endif //SERWER_PLAYER_H

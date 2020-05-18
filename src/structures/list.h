@@ -10,6 +10,15 @@ typedef struct list {
     void *content;
 } list_t;
 
+
+// player list root
+list_t players_root;
+pthread_mutex_t players_mutex;
+
+// current sockets list root
+list_t sockets_root;
+pthread_mutex_t sockets_mutex;
+
 /**
  * Append element at the end of the list
  * @param root - list root
