@@ -32,7 +32,6 @@ connection_handler(void *socket_desc) {
     nick[read_size] = '\0';
     printf("Client message: %s\n", nick);
 
-    // TODO test reconnection
     pthread_mutex_lock(&players_mutex);
     int64_t state = players_check_existence(&players_root, nick);
 
@@ -47,23 +46,36 @@ connection_handler(void *socket_desc) {
         pthread_mutex_unlock(&players_mutex);
         close(sock);
         pthread_exit(NULL);
-    } else      // reconnected player
+    } else {     // reconnected player
         this_player = (player_t *)state;
+        pthread_mutex_unlock(&players_mutex);
+    }
 
-    char buffer[2000];
+    char buffer[2048];
     do {
-        read_size = recv(sock , nick , 2000 , 0);
-        nick[read_size] = '\0';
+        read_size = recv(sock , buffer , 2000 , 0);
+        buffer[read_size] = '\0';
+
+        char *buff_ptr = buffer;
+
+        int buff_length;  // will store number of bytes read by current command from client
+
         int x, y, length;
         int counter;
-        sscanf(nick, "%d %s %d %d %d\n", &length, buffer, &x, &y, &counter);
-        printf("Client move: %s\n", buffer);
+        while (*buff_ptr) {
+            sscanf(buff_ptr, "%d %s %d %d %d\n%n", &length, nick, &x, &y, &counter, &buff_length);
+            printf("Client move: %s %d %d \n", nick, x, y);
+            this_player->x = x;
+            this_player->y = y;
+
+            buff_ptr += buff_length;
+        }
 
         /* Send the message back to client */
         // write(sock , nick , strlen(buffer));
 
         /* Clear the message buffer */
-        memset(buffer, 0, 2000);
+        memset(buffer, 0, 2048);
     } while(read_size > 2); /* Wait for empty line */
 
     fprintf(stderr, "Client disconnected\n");

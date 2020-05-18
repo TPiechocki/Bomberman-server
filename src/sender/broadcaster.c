@@ -16,15 +16,16 @@
 
 void *broadcast() {
     char buffer[2048];
-    strcpy(buffer, "");
+    memset(buffer, 0, 2048);
 
     int msec = 0, trigger = 10; /* 10ms */
     clock_t before, delta;
 
 
     while (1) {
+        memset(buffer, 0, 2048);
         before = clock();
-        printf("START BROADCAST\n");
+        //printf("START BROADCAST\n");
         list_t *temp = &players_root;
 
         pthread_mutex_lock(&players_mutex);
@@ -33,6 +34,7 @@ void *broadcast() {
             player_t *content = temp->content;
             sprintf(buffer, "%s %s %d %d", buffer, content->name, content->x, content->y);
         }
+        sprintf(buffer, "%s BOOOOB", buffer);
         pthread_mutex_unlock(&players_mutex);
 
         temp = &sockets_root;

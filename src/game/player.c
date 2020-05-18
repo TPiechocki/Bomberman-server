@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "player.h"
 
@@ -11,9 +12,9 @@ void player_disconnect(list_t* root, char *nick) {
     list_t *temp = root;
     while (temp->next != NULL) {
         player_t *content = temp->next->content;
-        if (content->name == nick) {
+        if (strcmp(content->name, nick) == 0) {
             content->connected = 0;
-            printf("Player %s temporarily disconnected.", nick);
+            printf("Player %s temporarily disconnected.\n", nick);
             return;
         }
         temp = temp->next;  // next element
@@ -35,13 +36,13 @@ int64_t players_check_existence(list_t *root, char *nick) {
     list_t *temp = root;
     while (temp->next != NULL) {
         player_t *content = temp->next->content;
-        if (content->name == nick) {
+        if (strcmp(content->name, nick) == 0) {
             if (content->connected == 0) {      // then reconnect
                 content->connected = 1;
-                printf("Player %s reconnected.", nick);
+                printf("Player %s reconnected.\n", nick);
                 return (int64_t)content;
             } else {
-                printf("Player %s already connected!.", nick);
+                printf("Player %s already connected!.\n", nick);
                 return -1;   // 2 means error: player exists
             }
         }

@@ -41,4 +41,12 @@ int list_remove(list_t *root, void *content);
  */
 void list_display(list_t *root);
 
+/**
+ * Remove all elements from the memory
+ * @param root - root of the list
+ */
+void list_free(list_t *root);
+
+void sockets_free(list_t *root);
+
 #endif //SERWER_LIST_H

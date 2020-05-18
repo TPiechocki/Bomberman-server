@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "list.h"
 
@@ -42,5 +43,28 @@ void list_display(list_t *root) {
     while (temp->next != NULL) {
         temp = temp->next;
         printf("%d %ld\n", counter++, (int64_t)temp->content);
+    }
+}
+
+void list_free(list_t *root) {
+    list_t *temp = root->next, *next;
+    // iterate to the end of the list
+    int counter = 1;
+    while (temp != NULL) {
+        next = temp->next;
+        free(temp);
+        temp = next;
+    }
+}
+
+void sockets_free(list_t *root) {
+    list_t *temp = root->next, *next;
+    // iterate to the end of the list
+    while (temp != NULL) {
+        next = temp->next;
+        printf("%ld\n", (int64_t)temp->content);
+        close((int64_t)temp->content);
+        free(temp);
+        temp = next;
     }
 }

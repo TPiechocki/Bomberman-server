@@ -9,13 +9,27 @@
 #include <string.h>
 #include <pthread.h>
 #include <src/sender/broadcaster.h>
+#include <signal.h>
 
 #include "game/player.h"
 #include "receiver/receiver.h"
 
+void exitHandler(int dummy) {
+    pthread_mutex_lock(&players_mutex);
+    list_free(&players_root);
+    pthread_mutex_lock(&sockets_mutex);
+    sockets_free(&sockets_root);
+    exit(0);
+}
+
 #pragma ide diagnostic ignored "EndlessLoop"
 int
 main(int argc, char *argv[]) {
+    // connect terminate signals with function so on ctrl+c program can free the memory
+    signal(SIGTERM, exitHandler);
+    signal(SIGINT, exitHandler);
+
+
     int64_t listenfd, connfd;
     //struct sockaddr_un serv_addr;
     pthread_t thread_id;
@@ -30,8 +44,8 @@ main(int argc, char *argv[]) {
 
 
     struct sockaddr_in serv_addr;
-    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }

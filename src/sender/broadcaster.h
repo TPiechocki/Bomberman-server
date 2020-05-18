@@ -5,7 +5,7 @@
 #ifndef SERWER_BROADCASTER_H
 #define SERWER_BROADCASTER_H
 
-#define TICK 50
+#define TICK 100
 
 void *broadcast();
 
