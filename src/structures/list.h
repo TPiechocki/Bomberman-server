@@ -47,6 +47,16 @@ void list_display(list_t *root);
  */
 void list_free(list_t *root);
 
+/**
+ * Free element's memory
+ * @param root - root of the list
+ */
 void sockets_free(list_t *root);
+
+/**
+ * @param root - root of the list
+ * @return number of elements in the list
+ */
+int list_length(list_t *root);
 
 #endif //SERWER_LIST_H

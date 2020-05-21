@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <src/structures/list.h>
 #include <src/game/player.h>
+#include <src/receiver/receiver.h>
 
 void *broadcast() {
     char buffer[2048];
@@ -29,12 +30,12 @@ void *broadcast() {
         list_t *temp = &players_root;
 
         pthread_mutex_lock(&players_mutex);
+        sprintf(buffer, "%d %d\n",  players_msg, list_length(&players_root));
         while (temp->next != NULL) {
             temp = temp->next;
             player_t *content = temp->content;
-            sprintf(buffer, "%s %s %d %d", buffer, content->name, content->x, content->y);
+            sprintf(buffer, "%s%s %d %d\n", buffer, content->name, content->x, content->y);
         }
-        sprintf(buffer, "%s BOOOOB", buffer);
         pthread_mutex_unlock(&players_mutex);
 
         temp = &sockets_root;

@@ -27,8 +27,9 @@ int list_remove(list_t *root, void *content) {
     list_t *temp = root;
     while (temp->next != NULL) {
         if (temp->next->content == content) {
-            free(temp->next);   // remove from memory
+            list_t *toDelete = temp->next;  // don't lose the pointer to the element to delete
             temp->next = temp->next->next;  // remove from list
+            free(toDelete);   // remove from memory
             return 0;
         }
         temp = temp->next;  // next element
@@ -49,7 +50,6 @@ void list_display(list_t *root) {
 void list_free(list_t *root) {
     list_t *temp = root->next, *next;
     // iterate to the end of the list
-    int counter = 1;
     while (temp != NULL) {
         next = temp->next;
         free(temp);
@@ -67,4 +67,14 @@ void sockets_free(list_t *root) {
         free(temp);
         temp = next;
     }
+}
+
+int list_length(list_t *root) {
+    list_t *temp = root;
+    int counter = 0;
+    while (temp->next != NULL) {
+        temp = temp->next;
+        counter++;
+    }
+    return counter;
 }
