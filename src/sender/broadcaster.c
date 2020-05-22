@@ -15,19 +15,51 @@
 #include <src/game/player.h>
 #include <src/receiver/receiver.h>
 
-void *broadcast() {
+void *broadcast(void *number_players) {
+    int number = (int)number_players;
+    list_t * temp;
+
     char buffer[2048];
     memset(buffer, 0, 2048);
 
     int msec = 0, trigger = 10; /* 10ms */
     clock_t before, delta;
 
+    pthread_mutex_lock(&players_mutex);
+    while (list_length(&players_root) < number) {
+        pthread_mutex_unlock(&players_mutex);
+        usleep(1000 * 100);
+        printf("%d\n" ,list_length(&players_root));
+        pthread_mutex_lock(&players_mutex);
+    }
+    pthread_mutex_unlock(&players_mutex);
+
+
+    sprintf(buffer, "%d %d\n",  start_msg, number);
+    temp = &players_root;
+    int counter = 0;
+    while (temp->next != NULL) {
+        temp = temp->next;
+        player_t *content = temp->content;
+        // counter describe start position when x and y are 0s
+        sprintf(buffer, "%s%d %s %d %d\n", buffer, counter++, content->name, 0, 0);
+    }
+    pthread_mutex_unlock(&players_mutex);
+
+
+    temp = &sockets_root;
+    pthread_mutex_lock(&sockets_mutex);
+    while (temp->next != NULL) {
+        temp = temp->next;
+        write((int) temp->content, buffer, strlen(buffer));
+    }
+    pthread_mutex_unlock(&sockets_mutex);
 
     while (1) {
         memset(buffer, 0, 2048);
         before = clock();
         //printf("START BROADCAST\n");
-        list_t *temp = &players_root;
+        temp = &players_root;
 
         pthread_mutex_lock(&players_mutex);
         sprintf(buffer, "%d %d\n",  players_msg, list_length(&players_root));
@@ -45,11 +77,14 @@ void *broadcast() {
             write((int) temp->content, buffer, strlen(buffer));
         }
         pthread_mutex_unlock(&sockets_mutex);
-
+        int test = 0;
         do {
             delta = clock() - before;
             msec = delta * 1000 / CLOCKS_PER_SEC;
-            //printf("%d\n", msec);
+            if (test == 0) {
+                //printf("%d\n", msec);
+                test = 1;
+            }
         } while (msec < TICK);
     }
 }

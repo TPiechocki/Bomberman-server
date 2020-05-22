@@ -5,11 +5,11 @@
 #ifndef SERWER_BROADCASTER_H
 #define SERWER_BROADCASTER_H
 
-#define TICK 100
+#define TICK 15
 
 /**
  * Function which inform all clients about the state of the game on each tick
  */
-void *broadcast();
+void *broadcast(void *number_players);
 
 #endif //SERWER_BROADCASTER_H

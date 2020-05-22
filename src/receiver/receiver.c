@@ -15,16 +15,18 @@
 #include <src/game/player.h>
 
 void *
-connection_handler(void *socket_desc) {
+connection_handler(void *args) {
 
     /* Get the socket descriptor */
-    int sock = * (int64_t *)socket_desc;
+    receiver_args_t *receiver_args = (receiver_args_t *)args;
+    int sock = receiver_args->sock;
     ssize_t read_size;
     char *message , nick[65];
 
     player_t *this_player;
 
     char buffer[2048];
+    char buffer_send[2048];
     do {
         read_size = recv(sock , buffer , 2000 , 0);
         buffer[read_size] = '\0';
@@ -34,7 +36,7 @@ connection_handler(void *socket_desc) {
         int buff_length;  // will store number of bytes read by current command from client
 
         int x, y, length;
-        int counter;
+        int action_counter;
         MSG msg_type;
         while (*buff_ptr) {
             sscanf(buff_ptr, "%d%n", &msg_type, &buff_length);
@@ -47,26 +49,42 @@ connection_handler(void *socket_desc) {
                 pthread_mutex_lock(&players_mutex);
                 int64_t state = players_check_existence(&players_root, nick);
 
-                if (state == 0) {       // create new player
+                if (state == 0 && list_length(&players_root) < receiver_args->max_players) {       // create new player
                     this_player = (player_t *) malloc(sizeof(player_t));
                     strcpy(this_player->name, nick);
                     this_player->connected = 1;
                     list_append(&players_root, (void *)this_player);
                     players_list_display(&players_root);
                     pthread_mutex_unlock(&players_mutex);
-                } else if (state == -1) {   // player couldn't be connected
+                } else if (state == -1 || list_length(&players_root) >= receiver_args->max_players) {   // player couldn't be connected
                     pthread_mutex_unlock(&players_mutex);
+                    // remove invalid socket
+                    pthread_mutex_lock(&sockets_mutex);
+                    list_remove(&sockets_root, (void *)(int64_t)sock);
+                    list_display(&sockets_root);
+                    pthread_mutex_unlock(&sockets_mutex);
                     close(sock);
                     pthread_exit(NULL);
-                } else {     // reconnected player
+                } else if (state > 0){     // reconnected player
                     this_player = (player_t *)state;
+
+                    // send start signal to the reconnected client
+                    sprintf(buffer_send  , "%d %d\n",  start_msg, list_length(&players_root));
+                    list_t *temp = &players_root;
+                    int counter = 0;
+                    while (temp->next != NULL) {
+                        temp = temp->next;
+                        player_t *content = temp->content;
+                        sprintf(buffer_send, "%s%d %s %d %d\n", buffer_send, counter++, content->name, content->x, content->y);
+                    }
                     pthread_mutex_unlock(&players_mutex);
+                    write(sock, buffer_send, strlen(buffer_send));
                 }
             }
             else if (this_player != NULL && msg_type == move_msg) {
-                sscanf(buff_ptr, "%s %d %d %d\n%n", nick, &x, &y, &counter, &buff_length);
+                sscanf(buff_ptr, "%s %d %d %d\n%n", nick, &x, &y, &action_counter, &buff_length);
                 buff_ptr += buff_length;
-                //printf("Client move: %s %d %d\n", nick, x, y);
+                printf("Client move: %s %d %d\n", nick, x, y);
                 this_player->x = x;
                 this_player->y = y;
             }

@@ -17,10 +17,15 @@ typedef enum Messages_ids{
 }MSG;
 
 
+typedef struct {
+    int sock;
+    int max_players;
+} receiver_args_t;
+
 /**
  * Function to get all individual client messages.
- * @param socket_desc - socket with the client
+ * @param socket_desc - arguments for the thread
  */
-void *connection_handler(void *socket_desc);
+void *connection_handler(void *receiver_args);
 
 #endif //SERWER_RECEIVER_H

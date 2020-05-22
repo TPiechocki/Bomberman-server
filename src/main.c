@@ -22,9 +22,11 @@ void exitHandler(int dummy) {
     exit(0);
 }
 
+/**
+ * Main only command argument is the number max player for session
+ */
 #pragma ide diagnostic ignored "EndlessLoop"
-int
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     // connect terminate signals with function so on ctrl+c program can free the memory
     signal(SIGTERM, exitHandler);
     signal(SIGINT, exitHandler);
@@ -40,7 +42,7 @@ main(int argc, char *argv[]) {
     pthread_mutex_init(&sockets_mutex, NULL);
 
     // open broadcaster
-    pthread_create(&thread_id, NULL, broadcast, 0);
+    pthread_create(&thread_id, NULL, broadcast, (void *)atoi(argv[1]));
 
 
     struct sockaddr_in serv_addr;
@@ -67,6 +69,9 @@ main(int argc, char *argv[]) {
         pthread_mutex_unlock(&sockets_mutex);
 
         fprintf(stderr, "Connection accepted\n");
-        pthread_create(&thread_id, NULL, connection_handler , (void *)&connfd);
+        receiver_args_t *temp = (receiver_args_t *)malloc(sizeof(receiver_args_t));
+        temp->sock = connfd;
+        temp->max_players = atoi(argv[1]);
+        pthread_create(&thread_id, NULL, connection_handler , (void *)temp);
     }
 }
