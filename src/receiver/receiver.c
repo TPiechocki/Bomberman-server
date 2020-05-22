@@ -13,6 +13,8 @@
 #include <pthread.h>
 #include <src/structures/list.h>
 #include <src/game/player.h>
+#include <src/game/bomb.h>
+#include <src/sender/broadcaster.h>
 
 void *
 connection_handler(void *args) {
@@ -56,16 +58,7 @@ connection_handler(void *args) {
                     list_append(&players_root, (void *)this_player);
                     players_list_display(&players_root);
                     pthread_mutex_unlock(&players_mutex);
-                } else if (state == -1 || list_length(&players_root) >= receiver_args->max_players) {   // player couldn't be connected
-                    pthread_mutex_unlock(&players_mutex);
-                    // remove invalid socket
-                    pthread_mutex_lock(&sockets_mutex);
-                    list_remove(&sockets_root, (void *)(int64_t)sock);
-                    list_display(&sockets_root);
-                    pthread_mutex_unlock(&sockets_mutex);
-                    close(sock);
-                    pthread_exit(NULL);
-                } else if (state > 0){     // reconnected player
+                } else if (state != -1 && state != 0){     // reconnected player
                     this_player = (player_t *)state;
 
                     // send start signal to the reconnected client
@@ -79,14 +72,40 @@ connection_handler(void *args) {
                     }
                     pthread_mutex_unlock(&players_mutex);
                     write(sock, buffer_send, strlen(buffer_send));
+                } else if (state == -1 || list_length(&players_root) >= receiver_args->max_players) {   // player couldn't be connected
+                    pthread_mutex_unlock(&players_mutex);
+                    // remove invalid socket
+                    pthread_mutex_lock(&sockets_mutex);
+                    list_remove(&sockets_root, (void *)(int64_t)sock);
+                    list_display(&sockets_root);
+                    pthread_mutex_unlock(&sockets_mutex);
+                    sprintf(buffer_send  , "%d\n",  start_msg);
+                   // write(sock, buffer_send, strlen(buffer_send)); TODO send failure signal
+                    close(sock);
+                    pthread_exit(NULL);
                 }
             }
             else if (this_player != NULL && msg_type == move_msg) {
                 sscanf(buff_ptr, "%s %d %d %d\n%n", nick, &x, &y, &action_counter, &buff_length);
                 buff_ptr += buff_length;
-                printf("Client move: %s %d %d\n", nick, x, y);
+                //printf("Client move: %s %d %d\n", nick, x, y);
                 this_player->x = x;
                 this_player->y = y;
+            }
+            else if (this_player != NULL && msg_type == bomb_msg) {
+                int tile;
+                sscanf(buff_ptr, "%s %d\n%n", nick, &tile, &buff_length);
+                buff_ptr += buff_length;
+                printf("Bomb placed: %s %d\n", nick, tile);
+                bomb_t *this_bomb = (bomb_t *)malloc(sizeof(bomb_t));
+                strcpy(this_bomb->name, nick);
+                this_bomb->tile = tile;
+                pthread_mutex_lock(&broadcaster_mutex);
+                this_bomb->end_of_life = CURRENT_TICK + BOMB_TICKS;
+                pthread_mutex_unlock(&broadcaster_mutex);
+                pthread_mutex_lock(&bombs_mutex);
+                list_append(&bombs_root, (void *)this_bomb);
+                pthread_mutex_unlock(&bombs_mutex);
             }
         }
 

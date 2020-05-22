@@ -15,6 +15,10 @@ typedef struct list {
 list_t players_root;
 pthread_mutex_t players_mutex;
 
+// bombs list root
+list_t bombs_root;
+pthread_mutex_t bombs_mutex;
+
 // current sockets list root
 list_t sockets_root;
 pthread_mutex_t sockets_mutex;

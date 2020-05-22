@@ -14,6 +14,7 @@
 #include <src/structures/list.h>
 #include <src/game/player.h>
 #include <src/receiver/receiver.h>
+#include <src/game/bomb.h>
 
 void *broadcast(void *number_players) {
     int number = (int)number_players;
@@ -55,6 +56,7 @@ void *broadcast(void *number_players) {
     }
     pthread_mutex_unlock(&sockets_mutex);
 
+    int tick = 0;
     while (1) {
         memset(buffer, 0, 2048);
         before = clock();
@@ -62,13 +64,34 @@ void *broadcast(void *number_players) {
         temp = &players_root;
 
         pthread_mutex_lock(&players_mutex);
-        sprintf(buffer, "%d %d\n",  players_msg, list_length(&players_root));
+        sprintf(buffer, "%d %d %d\n",  players_msg, list_length(&players_root), tick++);
         while (temp->next != NULL) {
             temp = temp->next;
             player_t *content = temp->content;
             sprintf(buffer, "%s%s %d %d\n", buffer, content->name, content->x, content->y);
         }
         pthread_mutex_unlock(&players_mutex);
+        pthread_mutex_lock(&broadcaster_mutex);
+        CURRENT_TICK = tick;
+        pthread_mutex_unlock(&broadcaster_mutex);
+
+        temp = &bombs_root;
+        pthread_mutex_lock(&bombs_mutex);
+        sprintf(buffer, "%s%d %d\n",  buffer, bombs_msg, list_length(&bombs_root));
+        while (temp->next != NULL) {
+            temp = temp->next;
+            bomb_t *content = temp->content;
+            sprintf(buffer, "%s%s %d %d\n", buffer, content->name, content->tile, content->end_of_life);
+
+            if (tick >= content->end_of_life) {
+                list_t *backup = temp->next;
+                list_remove(&bombs_root, temp->content);
+                temp = backup;
+                if (backup == NULL)
+                    break;
+            }
+        }
+        pthread_mutex_unlock(&bombs_mutex);
 
         temp = &sockets_root;
         pthread_mutex_lock(&sockets_mutex);

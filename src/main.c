@@ -41,6 +41,9 @@ int main(int argc, char *argv[]) {
     sockets_root.next = NULL;
     pthread_mutex_init(&sockets_mutex, NULL);
 
+    bombs_root.next = NULL;
+    pthread_mutex_init(&bombs_mutex, NULL);
+
     // open broadcaster
     pthread_create(&thread_id, NULL, broadcast, (void *)atoi(argv[1]));
 
