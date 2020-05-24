@@ -14,6 +14,8 @@ typedef enum Messages_ids{
     end_msg,
     players_msg,
     bombs_msg,
+    walls_msg,
+    destroyed_blocks_msg
 }MSG;
 
 

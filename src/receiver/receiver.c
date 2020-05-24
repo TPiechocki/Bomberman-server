@@ -15,6 +15,7 @@
 #include <src/game/player.h>
 #include <src/game/bomb.h>
 #include <src/sender/broadcaster.h>
+#include <src/game/blocks.h>
 
 void *
 connection_handler(void *args) {
@@ -30,14 +31,14 @@ connection_handler(void *args) {
     char buffer[2048];
     char buffer_send[2048];
     do {
-        read_size = recv(sock , buffer , 2000 , 0);
+        read_size = recv(sock , buffer , 2048 , 0);
         buffer[read_size] = '\0';
 
         char *buff_ptr = buffer;
 
         int buff_length;  // will store number of bytes read by current command from client
 
-        int x, y, length;
+        int x, y;
         int action_counter;
         MSG msg_type;
         while (*buff_ptr) {
@@ -55,9 +56,15 @@ connection_handler(void *args) {
                     this_player = (player_t *) malloc(sizeof(player_t));
                     strcpy(this_player->name, nick);
                     this_player->connected = 1;
+                    this_player->alive = 1;
                     list_append(&players_root, (void *)this_player);
                     players_list_display(&players_root);
                     pthread_mutex_unlock(&players_mutex);
+                    // add to listeners
+                    pthread_mutex_lock(&sockets_mutex);
+                    list_append(&sockets_root, (void *)sock);
+                    list_display(&sockets_root);
+                    pthread_mutex_unlock(&sockets_mutex);
                 } else if (state != -1 && state != 0){     // reconnected player
                     this_player = (player_t *)state;
 
@@ -71,7 +78,20 @@ connection_handler(void *args) {
                         sprintf(buffer_send, "%s%d %s %d %d\n", buffer_send, counter++, content->name, content->x, content->y);
                     }
                     pthread_mutex_unlock(&players_mutex);
+                    pthread_mutex_lock(&blocks_mutex);
+                    sprintf(buffer_send, "%s%d\n", buffer_send, walls_msg);
+                    for (int i = 0; i < 11; ++i) {
+                        for (int j = 0; j < 11; ++j) {
+                            sprintf(buffer_send, "%s%d ", buffer_send, blocks[i][j]);
+                        }
+                    }
+                    pthread_mutex_unlock(&blocks_mutex);
                     write(sock, buffer_send, strlen(buffer_send));
+                    // Add socket to the list
+                    pthread_mutex_lock(&sockets_mutex);
+                    list_append(&sockets_root, (void *)sock);
+                    list_display(&sockets_root);
+                    pthread_mutex_unlock(&sockets_mutex);
                 } else if (state == -1 || list_length(&players_root) >= receiver_args->max_players) {   // player couldn't be connected
                     pthread_mutex_unlock(&players_mutex);
                     // remove invalid socket
@@ -79,8 +99,6 @@ connection_handler(void *args) {
                     list_remove(&sockets_root, (void *)(int64_t)sock);
                     list_display(&sockets_root);
                     pthread_mutex_unlock(&sockets_mutex);
-                    sprintf(buffer_send  , "%d\n",  start_msg);
-                   // write(sock, buffer_send, strlen(buffer_send)); TODO send failure signal
                     close(sock);
                     pthread_exit(NULL);
                 }
@@ -101,7 +119,8 @@ connection_handler(void *args) {
                 strcpy(this_bomb->name, nick);
                 this_bomb->tile = tile;
                 pthread_mutex_lock(&broadcaster_mutex);
-                this_bomb->end_of_life = CURRENT_TICK + BOMB_TICKS;
+                this_bomb->start_of_explostion = CURRENT_TICK + BOMB_TICKS;
+                this_bomb->end_of_life = CURRENT_TICK + BOMB_TICKS + LAVA_TICKS;
                 pthread_mutex_unlock(&broadcaster_mutex);
                 pthread_mutex_lock(&bombs_mutex);
                 list_append(&bombs_root, (void *)this_bomb);
@@ -115,7 +134,6 @@ connection_handler(void *args) {
 
     fprintf(stderr, "Client disconnected\n");
 
-    // TODO decide when to remove player completely
     pthread_mutex_lock(&players_mutex);
     player_disconnect(&players_root, nick);
     players_list_display(&players_root);

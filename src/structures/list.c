@@ -55,6 +55,7 @@ void list_free(list_t *root) {
         free(temp);
         temp = next;
     }
+    root->next = NULL;
 }
 
 void sockets_free(list_t *root) {

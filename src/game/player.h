@@ -12,6 +12,7 @@ typedef struct {
     int x;
     int y;
     int counter;
+    int alive;      // 0 is dead, 1 is alive
     int connected; // 1 if connected, 0 if disconnected
 } player_t;
 

@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <src/sender/broadcaster.h>
 #include <signal.h>
+#include <src/game/blocks.h>
 
 #include "game/player.h"
 #include "receiver/receiver.h"
@@ -44,6 +45,9 @@ int main(int argc, char *argv[]) {
     bombs_root.next = NULL;
     pthread_mutex_init(&bombs_mutex, NULL);
 
+    pthread_mutex_init(&blocks_mutex, NULL);
+    initBlocks();
+
     // open broadcaster
     pthread_create(&thread_id, NULL, broadcast, (void *)atoi(argv[1]));
 
@@ -64,12 +68,6 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
-
-        // Add socket to the list
-        pthread_mutex_lock(&sockets_mutex);
-        list_append(&sockets_root, (void *)connfd);
-        list_display(&sockets_root);
-        pthread_mutex_unlock(&sockets_mutex);
 
         fprintf(stderr, "Connection accepted\n");
         receiver_args_t *temp = (receiver_args_t *)malloc(sizeof(receiver_args_t));
