@@ -10,7 +10,6 @@ typedef struct list {
     void *content;
 } list_t;
 
-
 // player list root
 list_t players_root;
 pthread_mutex_t players_mutex;

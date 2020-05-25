@@ -8,11 +8,12 @@ void initBlocks() {
     pthread_mutex_lock(&blocks_mutex);
     for (int i = 0; i < 11; ++i) {
         for (int j = 0; j < 11; ++j) {
+            // don't place block in the corners and in the places where are the indestructible blocks
             if ((i == 0 && (j == 0 || j == 1)) || (i == 1 && j == 0) || (i == 9 && j == 10)
                     || (i == 10 && (j == 10 || j == 9)) || (i == 0 && (j == 10 || j == 9))
                     || (i == 1 && j == 10 ) || ((i == 9 || i == 10 ) && j == 0) || (i == 10 && j == 1))
                 blocks[i][j] = 0;
-            else
+            else    // destroyable blocks in every different tile
                 blocks[i][j] = 1;
         }
     }

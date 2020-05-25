@@ -36,14 +36,14 @@ int64_t players_check_existence(list_t *root, char *nick) {
     list_t *temp = root;
     while (temp->next != NULL) {
         player_t *content = temp->next->content;
-        if (strcmp(content->name, nick) == 0) {
-            if (content->connected == 0) {      // then reconnect
+        if (strcmp(content->name, nick) == 0) { // if player with this nick exists
+            if (content->connected == 0) {      // and isn't connected right now, then reconnect
                 content->connected = 1;
                 printf("Player %s reconnected.\n", nick);
-                return (int64_t)content;
+                return (int64_t)content;    // return pointer to this player's struct
             } else {
                 printf("Player %s already connected!.\n", nick);
-                return -1;   // 2 means error: player exists
+                return -1;   // -1 means error: player exists
             }
         }
         temp = temp->next;  // next element

@@ -15,7 +15,9 @@
 #include "game/player.h"
 #include "receiver/receiver.h"
 
-void exitHandler(int dummy) {
+
+// Close sockets when program is closed; actually  ctrl+c or IDE terminate is the only way to close
+void exitHandler() {
     pthread_mutex_lock(&players_mutex);
     list_free(&players_root);
     pthread_mutex_lock(&sockets_mutex);
@@ -32,9 +34,8 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, exitHandler);
     signal(SIGINT, exitHandler);
 
-
+    // Init of mutexes and global lists
     int64_t listenfd, connfd;
-    //struct sockaddr_un serv_addr;
     pthread_t thread_id;
     players_root.next = NULL;
     pthread_mutex_init(&players_mutex, NULL);
@@ -48,7 +49,7 @@ int main(int argc, char *argv[]) {
     pthread_mutex_init(&blocks_mutex, NULL);
     initBlocks();
 
-    // open broadcaster
+    // open broadcaster which sends state of the game to all players
     pthread_create(&thread_id, NULL, broadcast, (void *)atoi(argv[1]));
 
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) {
     }
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons( 5000 );
+    serv_addr.sin_port = htons( 5000 );     // server listens on port 5000
 
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]) {
         connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
 
         fprintf(stderr, "Connection accepted\n");
+
+        // prepare arguments for client handler and start it new thread
         receiver_args_t *temp = (receiver_args_t *)malloc(sizeof(receiver_args_t));
         temp->sock = connfd;
         temp->max_players = atoi(argv[1]);
