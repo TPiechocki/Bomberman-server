@@ -30,6 +30,11 @@ void exitHandler() {
  */
 #pragma ide diagnostic ignored "EndlessLoop"
 int main(int argc, char *argv[]) {
+    if (argc <= 1) {
+        printf("Podaj ilość graczy!\n");
+        exit(0);
+    }
+
     // connect terminate signals with function so on ctrl+c program can free the memory
     signal(SIGTERM, exitHandler);
     signal(SIGINT, exitHandler);

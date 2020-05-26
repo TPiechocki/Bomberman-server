@@ -1,6 +1,3 @@
 # Bomberman-server
-
-# Komendy
-```socat TCP-LISTEN:5000,fork UNIX-CONNECT:/tmp/bomberman.sock```
-```ngrok tcp localhost:5000 --region=eu```
+Jedyny argument z linii poleceń to liczba graczy, którzy będą grali (1-4).
 
